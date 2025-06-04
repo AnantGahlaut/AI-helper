@@ -2,9 +2,10 @@ import pyaudio
 import pvporcupine
 import struct
 import os
+import Speech
 
 class WakeWordDetector:
-    def __init__(self, access_key, keyword_path=None, sensitivity=0.5):
+    def __init__(self, access_key, keyword_path=None, sensitivity=0.3):
         # Initialize Porcupine
         self.porcupine = pvporcupine.create(
             access_key=access_key,
@@ -12,6 +13,8 @@ class WakeWordDetector:
             keywords=["porcupine"] if not keyword_path else None,
             sensitivities=[sensitivity]
         )
+
+        self.texttospeech = Speech.TexttoSpeech()
         
         # Initialize PyAudio
         self.audio = pyaudio.PyAudio()
@@ -28,7 +31,7 @@ class WakeWordDetector:
         
     def listen(self):
         """Listen for wake word and trigger callback when detected"""
-        print("Listening for wake word... (Press Ctrl+C to exit)")
+        print("Listening for wake word...")
         
         try:
             while True:
@@ -47,9 +50,9 @@ class WakeWordDetector:
             print("\nStopping...")
         finally:
             self.cleanup()
-    
+            
     def on_wake_word_detected(self):
-        
+        self.texttospeech.speak_opening_line()
     
     def cleanup(self):
         """Release resources"""
@@ -64,12 +67,7 @@ class WakeWordDetector:
 if __name__ == '__main__':
     ACCESS_KEY = "YoJJ2GN4CRSCbFssd9B53Rdn8jwEp0DcWSapSf/qE/56coAbPf/faw=="
     
-    KEYWORD_PATH = "wakeword.ppn"  
+    KEYWORD_PATH = "Ai_helper\wakeword.ppn"  
     
-    class MyDetector(WakeWordDetector):
-        def on_wake_word_detected(self):
-            """Custom action when wake word is detected"""
-            print("Custom action triggered!")
-    
-    detector = MyDetector(access_key=ACCESS_KEY, keyword_path=KEYWORD_PATH)
+    detector = WakeWordDetector(access_key=ACCESS_KEY, keyword_path=KEYWORD_PATH)
     detector.listen()

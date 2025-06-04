@@ -1,13 +1,8 @@
-import json
+from openai import OpenAI
 
-text = """{ 
-    "text" : "hello",
-    "action" : null,
-    "reasoning" : "user needs to be said hi too"
-}"""
+client = OpenAI(api_key="sk_wRpyywMpqd5cZ47rPI8MWGdyb3FYnuN2oeT0546eQN7rl8QrZHcC")
 
-# Convert the JSON string to a Python dictionary
-data = json.loads(text)
+models = client.models.list()
 
-# Print the type of the variable 'data'
-print(type(data))
+for model in models.data:
+    print(model.id)

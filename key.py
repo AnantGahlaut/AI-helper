@@ -1,2 +1,0 @@
-'''open ai key - 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
-'''

@@ -1,0 +1,73 @@
+from openai import OpenAI
+import json
+import time
+
+class Jarvis:
+    def __init__(self):
+        self.model = "llama3-70b-8192" 
+        self.client = OpenAI(
+            api_key="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",  
+            base_url="https://api.groq.com/openai/v1"
+        )
+        self.messages = [
+            {
+                "role": "system",
+                "content": """You are Jarvis (act like a human). Always respond in this exact JSON format:
+                {
+                    "text": "your response",
+                    "action": "{
+                        "name" : Func_name
+                        name_of_parameter : parameter
+                    }",
+                    "reasoning": "why you chose this"
+                }
+                
+                These are your possible action options:
+                    open_application(app_id) # use to open applications
+                    open_text_file(query, path) # use to open a text file and write things inside
+                    change_file_loaction(current_path, new_path) # change a files location
+                    search_something_on_google(query) # used to search something on google and show the user
+                    powershell_query(query) # used to type something in powershell and run it, returns the output of the query when run
+                    powershell_query_administrator(query)  # same thing as powershell_query but asks the user first
+                    check_calendar() # just checks calendar and speaks what you have today
+
+                Also everything you put in the text portion will be said aloud so make sure you don't have too much text.
+                Act as if you have known the user for a long time without making assumptions
+                dont mention your capabilites unless speciffically asked
+                """
+            }
+        ]
+
+    def respond(self, user_input):
+        # Add user message with proper role
+        self.messages.append({
+            "role": "user",
+            "content": user_input
+        })
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=self.messages,
+                response_format={"type": "json_object"}  # Force JSON output
+            )
+            
+            # Get the content and ensure it's valid JSON
+            response_content = response.choices[0].message.content
+            return json.loads(response_content)
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            return {
+                "text": "I encountered an error processing your request",
+                "action": None,
+                "reasoning": "API error occurred"
+            }
+
+# Usage example
+if __name__ == "__main__":
+    jarvis = Jarvis()
+    while True:
+        user = input("")
+        response = jarvis.speak(str(time.asctime()) + user)
+        print(response)

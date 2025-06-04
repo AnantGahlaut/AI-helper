@@ -5,12 +5,11 @@ class Jarvis:
     """ Main class of Jarvis """
     def __init__(self):
 
-        self.model="anthropic/claude-3-haiku"
+        self.model = "llama3-70b-8192"  # Groq's Llama 3 70B model
         self.client = OpenAI(
-            api_key="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",
-            base_url="https://openrouter.ai/api/v1"
-        )
-        
+            api_key="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",  # Replace with your key
+            base_url="https://api.groq.com/openai/v1"  # Groq's OpenAI-compatible endpoint
+        )  
         self.history= []
         
         self.rules = {"role": "system", "content": """Your name is Jarvis. You have the capabilites to do almost anything on this computer but based on a 
@@ -20,7 +19,7 @@ class Jarvis:
                                             1. everytime you are responding you should return a python dictionary with 3 keys:
                                                 The first key is 'text' and it has what you want to say
                                                 The second key is 'action' dicating what acion you would want to take, from the actions list down below, use the null keyword if nothing is needed
-                                                The thirs key is 'reasoning' which tells why you made the desicion you made anf what was the context behind it.
+                                                The third key is 'reasoning' which tells why you made the desicion you made anf what was the context behind it.
 
                                             2. Be as consice and as clear as possible, don't add extra information, try aking your response as short as possible while still returning the overall message
 
@@ -55,7 +54,7 @@ class Jarvis:
                                                             change_file_loaction(current_path, new_path) # change a files location
                                                             search_something_on_google(query) # used to search something on google and show the user
                                                             powershell_query(query) # used to type something in powershell and run it, returns the output of the query when run
-                                                            powershell_query_administrator('query')  # same thing as powershell_query but asks the user first
+                                                            powershell_query_administrator(query)  # same thing as powershell_query but asks the user first
                                                         ]
                                             Extra Notes to know:
                                                 Everything You say in the 'text' part of your response will be put through a text-to-speech software
@@ -114,5 +113,6 @@ if __name__ == '__main__':
     jarvis = Jarvis()
     try:
         jarvis.conversation()
-    except:
+    except Exception as e:
+        print(e)
         jarvis.conversation()
