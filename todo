@@ -1,0 +1,8 @@
+TODO for Jarvis:
+
+Current problem: Trying to not have errors that shut it down, keep the program running
+
+
+#1 fix bad audio input have it recognize spacial sound and adapt for background noise with the volume
+#2 add interput feature
+#3 add all action features

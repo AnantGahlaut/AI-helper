@@ -70,6 +70,9 @@ class Jarvis:
         if len(self.messages) > 30:  
             self.messages = self.messages[:1] + self.messages[-28:] 
 
+        if user_input is None:
+            return None
+
         self.messages.append({
             "role": "system",
             "content":  """

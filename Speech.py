@@ -1,11 +1,15 @@
 import os
 import io
+import webrtcvad
+import pyaudio
 import sounddevice as sd
 import soundfile as sf
 import autopep8
 import subprocess
+import collections
 import time
 import elevenlabs
+import numpy as np
 from pydub import AudioSegment
 import speech_recognition as sr
 from dotenv import load_dotenv
@@ -14,22 +18,36 @@ from elevenlabs import play
 from better_jarvis2 import Jarvis
 
 class TexttoSpeech:
+
+
     def __init__(self):
 
         load_dotenv()
 
         self.client = ElevenLabs(
           api_key='sk_2dfc4b33dd96eedab9a1a4b80a251d98b386bd1340ff86c2',
-          ) 
+          )
         
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
         self.jarvis = Jarvis()
-    
 
-    
+        self.vad = webrtcvad.Vad(2) 
+        self.audio = pyaudio.PyAudio()
+        self.ring_buffer = collections.deque(maxlen=10)
+
+        self.FRAME_DURATION = 20  # ms
+        self.SAMPLE_RATE = 16000
+        self.FRAME_SIZE = int(self.SAMPLE_RATE * self.FRAME_DURATION / 1000)
+        self.CHANNELS = 1
+        self.FORMAT = pyaudio.paInt16
+        self.SAMPLE_WIDTH = 2 
+
+        self.start = 0
+        
     
     def speak(self, words):
+        self.start = time.time()
         if not isinstance(words, str):
             raise TypeError("Can only speak type -> str")
         
@@ -49,6 +67,7 @@ class TexttoSpeech:
         
         proccess = subprocess.Popen(["ffplay", "-autoexit", "-nodisp", filename])
         proccess.wait()
+        print(f"time took:{time.time()-self.start}")
 
 
     def speak_opening_line(self, id = 1, filename = r"C:\Users\anant\OneDrive\Documents\Desktop\Jarvis\Ai_helper\output.mp3"):
@@ -56,60 +75,110 @@ class TexttoSpeech:
             subprocess.run(["ffplay", "-nodisp", "-autoexit", filename], check=True)
         said = self.record_until_silence()
         
-    def record_until_silence(self):
-        print("Recording started! Speak your phrase...")
-        with self.microphone as source:
-            self.recognizer.adjust_for_ambient_noise(source)
-            # This listens until you pause talking (VAD kicks in here)
-            audio = self.recognizer.listen(source)
-        print("Recording stopped automatically (silence detected).")
+        
+    def frame_generator(self):
+        with sd.InputStream(channels=self.CHANNELS, samplerate=self.SAMPLE_RATE, dtype='int16', blocksize=self.FRAME_SIZE) as stream:
+            while True:
+                audio = stream.read(self.FRAME_SIZE)[0]
+                volume = np.linalg.norm(audio) / self.FRAME_SIZE
+                print(f"Volume: {volume:.2f}")  # should spike when you talk
+                yield audio.tobytes()
+
+    def is_speech(self, frame):
+        return self.vad.is_speech(frame, self.SAMPLE_RATE)
+    
+    def collect_voiced_frames(self, max_loops=1000):
+        buffer = []
+        silence_count = 0
+        speech_count = 0
+        max_silence_frames = 3  # 100ms of silence before stopping
+        i = 1
+        for frame in self.frame_generator():
+            if i > max_loops:
+                print("no speech detected in alloted time")
+                return None
+                break
+            if self.is_speech(frame):
+                buffer.append(frame)
+                speech_count += 1
+                silence_count = 0
+            else:
+                if speech_count >= 4:
+                    silence_count += 1
+                    if silence_count > max_silence_frames:
+                        break
+                    buffer.append(frame)  # include trailing silence to not cut off words
+
+        return b''.join(buffer)
+    
+    def transcribe_audio(self, audio_bytes):
+        audio_data = sr.AudioData(audio_bytes, self.SAMPLE_RATE, self.SAMPLE_WIDTH)
         try:
-            transcription = self.recognizer.recognize_google(audio)
-            print("you said:", transcription)
-            answer = self.jarvis.respond(transcription)
-            print(answer.get("text"))
-            self.speak(answer.get("text"))
-            print(answer.get("action"))
-            contiued_convo = self.check_for_continued_talking()
-            if contiued_convo is not False:
-                self.conversation(contiued_convo)
+            text = self.recognizer.recognize_google(audio_data)
+            return text
         except sr.UnknownValueError:
-            print("Sorry, couldn't understand that.")
+            print("[JARVIS]: Sorry, couldn't understand that.")
+        except sr.RequestError as e:
+            print(f"[JARVIS]: API error: {e}")
+        except Exception as e:
+            print(e)
+            return None
+    
 
-        except sr.RequestError:
-            print("API error.")
+    def record_until_silence(self):
+        print("🎧 Listening...")
+        raw_audio = self.collect_voiced_frames()
+        print("🛑 Speech ended. Transcribing...")
+        self.start = time.time()
+        transcription = self.transcribe_audio(raw_audio)
+        print("you said:", transcription)
+        if transcription is None:
+            return None
+        answer = self.jarvis.respond(transcription)
 
-    def check_for_continued_talking(self, time=3):
-            with self.microphone as source:
-                self.recognizer.adjust_for_ambient_noise(source=source)
+        if transcription is None:
+            print("[JARVIS]: Didn't catch that, try again!")
+            return
+        
+        print(answer.get("text"))
+        print(f"time took: {time.time()-self.start}")
+        self.speak(answer.get("text"))
+        print(answer.get("action"))
+        contiued_convo = self.check_for_continued_talking()
+        if contiued_convo is not False:
+            self.conversation(contiued_convo)
+
+    def check_for_continued_talking(self):
+            print("checking for response")
+            raw_audio = raw_audio = self.collect_voiced_frames()
+            if raw_audio is not None:
                 try:
-                    print("starts recording")
-                    audio = self.recognizer.listen(source, timeout=3)
-                    print("finished recording")
-                except sr.WaitTimeoutError:
-                    print("No speech detected (timeout).")
-                    
+                    transcription = self.transcribe_audio(raw_audio)
+                    if transcription is None:
+                        return False
+                    return transcription
+                except Exception as e:
+                    print(e)
                     return False
-                
-            try:
-                text = self.recognizer.recognize_google(audio)
-                print("speech Detected Conversation Continues")
-                return text
-            except:
-                print("no speech detected")
-                return False
             
+            return False
+            
+
     def conversation(self, user_speech):
         convo_cont = True
         while convo_cont:
             response = self.jarvis.respond(user_speech)
             self.speak(response.get("text"))
+            print("time Started")
+            self.start = time.time()
             print(response.get("action"))
             text = self.check_for_continued_talking()
             if text is not False:
                 user_speech = text
+                print(f"time took: {time.time()-self.start}")
                 continue
             else:
+                print(f"time took: {time.time()-self.start}")
                 break
 
 
