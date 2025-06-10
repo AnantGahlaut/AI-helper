@@ -3,11 +3,10 @@ TODO for Jarvis:
 
 average response time is 1.5 - 4 sec
 figuring out if its a problem: maybe change the voice a little slow
-Current problem: Trying to not have errors that shut it down, keep the program running
+Current problem: fix bad audio input have it recognize spacial sound and adapt for background noise with the volume
 
-#1 fix bad audio input have it recognize spacial sound and adapt for background noise with the volume
-#2 add interput feature
-#3 add history feature with text file it rings up at the beginning when setting everything up
-#4 add all action features
-#5 add opencv personalized face recognition use threading for full computer utilization
-#6 find more api to maybe add to it to make it not slower
+#1 add interput feature
+#2 add history feature with text file it rings up at the beginning when setting everything up
+#3 add all action features
+#4 add opencv personalized face recognition use threading for full computer utilization
+#5 find more api to maybe add to it to make it not slower

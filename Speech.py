@@ -7,9 +7,12 @@ import soundfile as sf
 import autopep8
 import subprocess
 import collections
+import threading
 import time
+import pyttsx3
 import elevenlabs
 import numpy as np
+from pydub.utils import mediainfo
 from pydub import AudioSegment
 import speech_recognition as sr
 from dotenv import load_dotenv
@@ -20,19 +23,30 @@ from better_jarvis2 import Jarvis
 class TexttoSpeech:
 
 
-    def __init__(self):
+    def __init__(self, api_key_no=2):
 
         load_dotenv()
 
-        self.client = ElevenLabs(
-          api_key='sk_2dfc4b33dd96eedab9a1a4b80a251d98b386bd1340ff86c2',
-          )
-        
+        self.api_key_1 ='sk_2dfc4b33dd96eedab9a1a4b80a251d98b386bd1340ff86c2'
+        self.api_key_2 ='sk_a8cf14db90cef0bdbea3052e34f290351d8aff2e223ffac0'
+
+        if api_key_no == 2: 
+            self.client = ElevenLabs(
+            api_key= self.api_key_2,
+            )
+            self.speak_style = 2
+        elif api_key_no == 1:
+            self.client = ElevenLabs(
+            api_key= self.api_key_1,
+            )
+            self.speak_style = 1
+
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
         self.jarvis = Jarvis()
 
-        self.vad = webrtcvad.Vad(2) 
+        self.engine = pyttsx3.init()
+        self.vad = webrtcvad.Vad(3) 
         self.audio = pyaudio.PyAudio()
         self.ring_buffer = collections.deque(maxlen=10)
 
@@ -45,29 +59,61 @@ class TexttoSpeech:
 
         self.start = 0
         
+        self.voices = self.engine.getProperty('voices')
+        self.engine.setProperty('rate', 180)     # Speed (words per minute)
+        self.engine.setProperty('volume', 1.0) 
+        self.engine.setProperty('voice', self.voices[0].id)
+
+        self.calibrate_noise()
+
+    def calibrate_noise(self, duration=1):
+        with self.microphone as source:
+            print("📡 Calibrating for ambient noise...")
+            self.recognizer.adjust_for_ambient_noise(source, duration=duration)
+            print(f"✅ Energy threshold set to: {self.recognizer.energy_threshold}")
     
     def speak(self, words):
         self.start = time.time()
         if not isinstance(words, str):
             raise TypeError("Can only speak type -> str")
         
-        audio_gen = self.client.text_to_speech.convert(
-            text=words,
-            voice_id="ZQe5CZNOzWyzPSCn5a3c",
-            model_id="eleven_flash_v2_5",
-            output_format="mp3_44100_128",
-        )
-        
-        # Collect chunks into one bytes object
+
+        if self.speak_style == 1:
+            audio_gen = self.client.text_to_speech.convert(
+                text=words,
+                voice_id="xPGjzNrZAIerjtfmn93E",
+                model_id="eleven_flash_v2_5",
+                output_format="mp3_44100_128",
+            )
+
+        if self.speak_style == 2:
+            audio_gen = self.client.text_to_speech.convert(
+                text=words,
+                voice_id="ErXwobaYiN019PkySvjV",
+                model_id="eleven_flash_v2_5",
+                output_format="mp3_44100_128",
+            )
+
         audio_bytes = b"".join(audio_gen)
-        
         filename = "temp_output.mp3"
         with open(filename, "wb") as f:
             f.write(audio_bytes)
-        
-        proccess = subprocess.Popen(["ffplay", "-autoexit", "-nodisp", filename])
+
+        # 🔍 Get actual duration
+        duration_str = mediainfo(filename)["duration"]
+        duration = float(duration_str)
+
+        # 🔄 Start noise calibration for exact duration
+        calibration_thread = threading.Thread(target=self.calibrate_noise, args=(duration,), daemon=True)
+        calibration_thread.start()
+
+        # 🔊 Play it
+        print(f"time took: {time.time()-self.start}")
+        proccess = subprocess.Popen(["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filename])
         proccess.wait()
-        print(f"time took:{time.time()-self.start}")
+        
+
+
 
 
     def speak_opening_line(self, id = 1, filename = r"C:\Users\anant\OneDrive\Documents\Desktop\Jarvis\Ai_helper\output.mp3"):
@@ -81,23 +127,24 @@ class TexttoSpeech:
             while True:
                 audio = stream.read(self.FRAME_SIZE)[0]
                 volume = np.linalg.norm(audio) / self.FRAME_SIZE
-                print(f"Volume: {volume:.2f}")  # should spike when you talk
+                print(f"Volume: {volume:.2f}, {self.is_speech(audio)}")  # should spike when you talk
                 yield audio.tobytes()
 
     def is_speech(self, frame):
         return self.vad.is_speech(frame, self.SAMPLE_RATE)
     
-    def collect_voiced_frames(self, max_loops=1000):
+    def collect_voiced_frames(self, max_loops=60):
         buffer = []
         silence_count = 0
         speech_count = 0
-        max_silence_frames = 3  # 100ms of silence before stopping
-        i = 1
-        for frame in self.frame_generator():
-            if i > max_loops:
-                print("no speech detected in alloted time")
+        max_silence_frames = 7  # 100ms of silence before stopping
+        min_frames = 25
+
+        for i, frame in enumerate(self.frame_generator()):
+            if i > max_loops and speech_count == 0:
+                print("no speech detected in allotted time")
                 return None
-                break
+
             if self.is_speech(frame):
                 buffer.append(frame)
                 speech_count += 1
@@ -105,11 +152,11 @@ class TexttoSpeech:
             else:
                 if speech_count >= 4:
                     silence_count += 1
-                    if silence_count > max_silence_frames:
+                    buffer.append(frame)  # only add trailing silence *after* we started speech
+                    if silence_count > max_silence_frames and i > 25:
                         break
-                    buffer.append(frame)  # include trailing silence to not cut off words
 
-        return b''.join(buffer)
+        return b''.join(buffer) if buffer else None
     
     def transcribe_audio(self, audio_bytes):
         audio_data = sr.AudioData(audio_bytes, self.SAMPLE_RATE, self.SAMPLE_WIDTH)

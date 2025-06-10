@@ -32,6 +32,7 @@ class WakeWordDetector:
     def listen(self):
         """Listen for wake word and trigger callback when detected"""
         print("Listening for wake word...")
+        self.texttospeech.speak("Jarvis Initialized")
         
         try:
             while True:
