@@ -23,7 +23,7 @@ from better_jarvis2 import Jarvis
 class TexttoSpeech:
 
 
-    def __init__(self, api_key_no=2):
+    def __init__(self, api_key_no=1):
 
         load_dotenv()
 
@@ -35,6 +35,7 @@ class TexttoSpeech:
             api_key= self.api_key_2,
             )
             self.speak_style = 2
+            
         elif api_key_no == 1:
             self.client = ElevenLabs(
             api_key= self.api_key_1,
@@ -49,14 +50,14 @@ class TexttoSpeech:
         self.vad = webrtcvad.Vad(3) 
         self.audio = pyaudio.PyAudio()
         self.ring_buffer = collections.deque(maxlen=10)
-
+                   
         self.FRAME_DURATION = 20  # ms
         self.SAMPLE_RATE = 16000
         self.FRAME_SIZE = int(self.SAMPLE_RATE * self.FRAME_DURATION / 1000)
         self.CHANNELS = 1
         self.FORMAT = pyaudio.paInt16
         self.SAMPLE_WIDTH = 2 
-
+        self.speech_error = 0
         self.start = 0
         
         self.voices = self.engine.getProperty('voices')
@@ -72,45 +73,97 @@ class TexttoSpeech:
             self.recognizer.adjust_for_ambient_noise(source, duration=duration)
             print(f"✅ Energy threshold set to: {self.recognizer.energy_threshold}")
     
-    def speak(self, words):
+    def speak(self, words=""):
+        print(f"Using speak_style {self.speak_style}")
         self.start = time.time()
         if not isinstance(words, str):
             raise TypeError("Can only speak type -> str")
         
+        advanced_voice = True
 
         if self.speak_style == 1:
-            audio_gen = self.client.text_to_speech.convert(
-                text=words,
-                voice_id="xPGjzNrZAIerjtfmn93E",
-                model_id="eleven_flash_v2_5",
-                output_format="mp3_44100_128",
-            )
+            try:
+                audio_gen = self.client.text_to_speech.convert(
+                    text=words,
+                    voice_id="xPGjzNrZAIerjtfmn93E",
+                    model_id="eleven_flash_v2_5",
+                    output_format="mp3_44100_128",
+                )
+                self.speech_error = 0 
+                audio_bytes = b"".join(audio_gen)
+            except Exception as e:
+                if self.speech_error == 1:
+                    print("advanced voice is Malfunctioning")
+                    self.engine.say("Advanced Voice is Malfunctioning. Switching to Default")
+                    self.engine.runAndWait()
+                    self.speak_style = 3
+                    self.speak(words)
+                    return
+                else:
+                    print(f"error happened switching voices: {e}")
+                    self.engine.say("An error occured. Switching Voices to 2")
+                    self.engine.runAndWait()
+                    self.speak_style = 2
+                    self.speech_error = 1
+                    self.client = ElevenLabs(
+                    api_key= self.api_key_2,
+                    )
+                    self.speak(words)
+                    return
+        elif self.speak_style == 2:
+            try: 
+                audio_gen = self.client.text_to_speech.convert(
+                    text=words,
+                    voice_id="ErXwobaYiN019PkySvjV",
+                    model_id="eleven_flash_v2_5",
+                    output_format="mp3_44100_128",
+                )
+                audio_bytes = b"".join(audio_gen)
+                print("got here ")
+                self.speech_error = 0
+            except Exception as e:
+                print("second error: ",e)
+                if self.speech_error == 1:
+                    print(f"advanced voice is Malfunctioning: {e}")
+                    self.engine.say("Advanced Voice is Malfunctioning. Switching to Default")
+                    self.engine.runAndWait()
+                    self.speak_style = 3
+                    self.speak(words)
+                    return
+                else:
+                    print(f"error happened switching voices: {e}")
+                    self.engine.say("An error occured. Switching Voices to 1")
+                    self.engine.runAndWait()
+                    self.speak_style = 1
+                    self.speech_error = 1
+                    self.client = ElevenLabs(
+                    api_key= self.api_key_1,
+                    )
+                    self.speak(words)
+                    return
 
-        if self.speak_style == 2:
-            audio_gen = self.client.text_to_speech.convert(
-                text=words,
-                voice_id="ErXwobaYiN019PkySvjV",
-                model_id="eleven_flash_v2_5",
-                output_format="mp3_44100_128",
-            )
+        elif self.speak_style == 3:
+            self.engine.say(words) 
+            self.engine.runAndWait()
+            advanced_voice = False
 
-        audio_bytes = b"".join(audio_gen)
-        filename = "temp_output.mp3"
-        with open(filename, "wb") as f:
-            f.write(audio_bytes)
+        if advanced_voice:
+            filename = "temp_output.mp3"
+            with open(filename, "wb") as f:
+                f.write(audio_bytes)
 
-        # 🔍 Get actual duration
-        duration_str = mediainfo(filename)["duration"]
-        duration = float(duration_str)
+            # 🔍 Get actual duration
+            duration_str = mediainfo(filename)["duration"]
+            duration = float(duration_str)
 
-        # 🔄 Start noise calibration for exact duration
-        calibration_thread = threading.Thread(target=self.calibrate_noise, args=(duration,), daemon=True)
-        calibration_thread.start()
+            # 🔄 Start noise calibration for exact duration
+            calibration_thread = threading.Thread(target=self.calibrate_noise, args=(duration,), daemon=True)
+            calibration_thread.start()
 
-        # 🔊 Play it
-        print(f"time took: {time.time()-self.start}")
-        proccess = subprocess.Popen(["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filename])
-        proccess.wait()
+            # 🔊 Play it
+            print(f"time took: {time.time()-self.start}")
+            proccess = subprocess.Popen(["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filename])
+            proccess.wait()
         
 
 
