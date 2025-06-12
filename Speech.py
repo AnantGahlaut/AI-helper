@@ -8,22 +8,25 @@ import autopep8
 import subprocess
 import collections
 import threading
+import struct
 import time
 import pyttsx3
 import elevenlabs
 import numpy as np
 from pydub.utils import mediainfo
 from pydub import AudioSegment
+import pvporcupine
 import speech_recognition as sr
 from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
 from elevenlabs import play
-from better_jarvis2 import Jarvis
+import Jarvis
+
 
 class TexttoSpeech:
 
 
-    def __init__(self, api_key_no=1):
+    def __init__(self, api_key_no=2):
 
         load_dotenv()
 
@@ -42,9 +45,25 @@ class TexttoSpeech:
             )
             self.speak_style = 1
 
+        self.porcupine = pvporcupine.create(
+            access_key="YoJJ2GN4CRSCbFssd9B53Rdn8jwEp0DcWSapSf/qE/56coAbPf/faw==",
+            keyword_paths=["Ai_helper\wakeword.ppn" ] if "Ai_helper\wakeword.ppn" else None,
+            keywords=["porcupine"] if not "Ai_helper\wakeword.ppn"  else None,
+            sensitivities=[0.3]
+        )
+
+        self.interupt_listening = False
+
+        self.audio = pyaudio.PyAudio()
+
+        self.continue_listen_for_interupt = True
+        self.continue_calibrate_noise = True
+        self.interrupted = False
+
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
-        self.jarvis = Jarvis()
+        self.mic_lock = threading.Lock()
+        self.jarvis = Jarvis.Jarvis()
 
         self.engine = pyttsx3.init()
         self.vad = webrtcvad.Vad(3) 
@@ -66,13 +85,68 @@ class TexttoSpeech:
         self.engine.setProperty('voice', self.voices[0].id)
 
         self.calibrate_noise()
-
-    def calibrate_noise(self, duration=1):
-        with self.microphone as source:
-            print("📡 Calibrating for ambient noise...")
-            self.recognizer.adjust_for_ambient_noise(source, duration=duration)
-            print(f"✅ Energy threshold set to: {self.recognizer.energy_threshold}")
     
+    def log_function_name(func):
+        def wrapper(*args, **kwargs):
+            print(f"Calling function: {func.__name__}")
+            return func(*args, **kwargs)
+        return wrapper
+
+    @log_function_name
+    def listen_for_interupt(self):
+        
+        self.stream = self.audio.open(
+            rate=self.porcupine.sample_rate,
+            channels=1,
+            format=pyaudio.paInt16,
+            input=True,
+            frames_per_buffer=self.porcupine.frame_length,
+            input_device_index=None 
+        )
+        try:
+            print("listen for interupt")
+            self.interupt_listening = True
+            while self.continue_listen_for_interupt:
+                # Read audio frame from stream
+                pcm = self.stream.read(self.porcupine.frame_length)
+                pcm = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
+                
+                # Process with Porcupine
+                result = self.porcupine.process(pcm)
+                
+                if result >= 0:
+                    print("\ninterupt detected!")
+                    self.interrupted = True
+                    self.continue_listen_for_interupt = False
+                    self.on_interupt()
+                    break 
+            print("done listening for interupt")
+            self.interupt_listening = False
+        except Exception as e:
+            print(e)
+
+    @log_function_name
+    def on_interupt(self):
+        with self.mic_lock:
+            self.stop_audio_playback()
+            self.record_until_silence()
+
+    @log_function_name
+    def stop_audio_playback(self):
+            print("Stopping audio playback...")
+            self.audio_process.kill() 
+            self.audio_process = None
+ 
+
+    @log_function_name
+    def calibrate_noise(self, duration=1):
+            with self.mic_lock:
+                with self.microphone as source:
+                    print("📡 Calibrating for ambient noise...")
+                    self.recognizer.adjust_for_ambient_noise(source, duration=duration)
+                    print(f"✅ Energy threshold set to: {self.recognizer.energy_threshold}")
+
+    @log_function_name
     def speak(self, words=""):
         print(f"Using speak_style {self.speak_style}")
         self.start = time.time()
@@ -152,28 +226,35 @@ class TexttoSpeech:
             with open(filename, "wb") as f:
                 f.write(audio_bytes)
 
-            # 🔍 Get actual duration
             duration_str = mediainfo(filename)["duration"]
             duration = float(duration_str)
 
-            # 🔄 Start noise calibration for exact duration
+            self.interrupted = False
+            self.continue_listen_for_interupt = True
+            self.continue_calibrate_noise = True
+
             calibration_thread = threading.Thread(target=self.calibrate_noise, args=(duration,), daemon=True)
             calibration_thread.start()
 
-            # 🔊 Play it
+            interupt_thread = threading.Thread(target=self.listen_for_interupt, args= (), daemon=True)
+            print("made interupt thread and about to start it")
+            interupt_thread.start()
+
             print(f"time took: {time.time()-self.start}")
-            proccess = subprocess.Popen(["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filename])
-            proccess.wait()
-        
+
+            self.audio_process = subprocess.Popen(["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filename])
+            self.audio_process.wait()
+            self.continue_listen_for_interupt = False  
+            self.continue_calibrate_noise = False
 
 
+           
 
-
+    @log_function_name
     def speak_opening_line(self, id = 1, filename = r"C:\Users\anant\OneDrive\Documents\Desktop\Jarvis\Ai_helper\output.mp3"):
         if id == 1:
             subprocess.run(["ffplay", "-nodisp", "-autoexit", filename], check=True)
         said = self.record_until_silence()
-        
         
     def frame_generator(self):
         with sd.InputStream(channels=self.CHANNELS, samplerate=self.SAMPLE_RATE, dtype='int16', blocksize=self.FRAME_SIZE) as stream:
@@ -224,7 +305,7 @@ class TexttoSpeech:
             print(e)
             return None
     
-
+    @log_function_name
     def record_until_silence(self):
         print("🎧 Listening...")
         raw_audio = self.collect_voiced_frames()
@@ -243,11 +324,15 @@ class TexttoSpeech:
         print(answer.get("text"))
         print(f"time took: {time.time()-self.start}")
         self.speak(answer.get("text"))
-        print(answer.get("action"))
-        contiued_convo = self.check_for_continued_talking()
-        if contiued_convo is not False:
-            self.conversation(contiued_convo)
 
+        if self.interrupted is False:
+            print(answer.get("action"))
+            print("record_until_silence is calling check_for_talking")
+            contiued_convo = self.check_for_continued_talking()
+            if contiued_convo is not False:
+                self.conversation(contiued_convo)
+
+    @log_function_name
     def check_for_continued_talking(self):
             print("checking for response")
             raw_audio = raw_audio = self.collect_voiced_frames()
@@ -263,7 +348,7 @@ class TexttoSpeech:
             
             return False
             
-
+    @log_function_name
     def conversation(self, user_speech):
         convo_cont = True
         while convo_cont:

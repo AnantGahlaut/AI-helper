@@ -44,8 +44,9 @@ class WakeWordDetector:
                 result = self.porcupine.process(pcm)
                 
                 if result >= 0:
-                    print("\nWake word detected!")
-                    self.on_wake_word_detected()
+                    if self.texttospeech.interupt_listening is not True:
+                        print("\nWake word detected!")
+                        self.on_wake_word_detected()
                     
         except KeyboardInterrupt:
             print("\nStopping...")

@@ -1,20 +1,20 @@
 from openai import OpenAI
 import json
+import time
 
 class Jarvis:
-    """ Main class of Jarvis """
     def __init__(self):
-
-        self.model = "llama3-70b-8192"  # Groq's Llama 3 70B model
+        self.model = "llama3-70b-8192" 
         self.client = OpenAI(
-            api_key="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",  # Replace with your key
-            base_url="https://api.groq.com/openai/v1"  # Groq's OpenAI-compatible endpoint
-        )  
-        self.history= []
-        
-        self.rules = {"role": "system", "content": """Your name is Jarvis. You have the capabilites to do almost anything on this computer but based on a 
+            api_key="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",  
+            base_url="https://api.groq.com/openai/v1"
+        )
+        self.messages = [
+            {
+                "role": "system",
+                "content": """Your name is Jarvis. You have the capabilites to do almost anything on this computer but based on a 
                                             certain set of rules, you must follow these rules all the time with 0 exceptions. 
-                
+                                            The person that made you his name is Anant Gahlaut
                                             
                                             1. everytime you are responding you should return a python dictionary with 3 keys:
                                                 The first key is 'text' and it has what you want to say
@@ -31,25 +31,19 @@ class Jarvis:
                       
                                             6. don't repeat the same thing twice in the 'text' part of response 
 
-                                            7. If the user has explicitly not given a command don't act like a assistance robot, if user wants to have a conversation act as a friend not an assistant
-
-                                            8. Speak as quickly as you can
+                                            7. If the user has explicitly not given a command don't act like a assistance robot, if user wants to have a conversation act as a friend not a robot
                 
-                                            Here are a couple of examples of how an output of yours would be like:
-                                            example 1:
+                                            Here is an examples of how an output of yours would be like:
                                             {
-                                                "text" : "Hello how may I be useful"
-                                                "action" : null
-                                                "reasoning" : "just booted up and because the user needs me to be useful asking the user what I can do"
-                                            }
-
-`                                           example 2:
-                                            {
-                                                "text" : "writing what you said in notepad in documents/random-thoughts"
-                                                "action" : "open_text_file(query = "what the user asked to write", path = "documents/random-thoughts")"
-                                                "reasoning" : "User asked me to record some of his random thoughts"
+                                                "text": "your response",
+                                                "action": "{
+                                                            "name" : Func_name
+                                                            name_of_parameter : parameter
+                                                        }",
+                                                "reasoning": "why you chose this"
                                             }
                 
+`                                          
                                             actions list = [
                                                             open_application(app_id) # use to open applications
                                                             open_text_file(query, path) # use to open a text file and write things inside
@@ -68,53 +62,97 @@ class Jarvis:
                                                 If the user wants to have a conversation dont repeatidly ask "How can I assist you"
             
                                             
-                """ }
-        
-        self.history.append(self.rules)
+                """
+            }
+        ]
 
-        response = self.client.chat.completions.create(
-            model= self.model,
-            messages=[self.history]
-        )
-        
-    def speak(self, user_speech):
-        """Respond to user speech"""
+    def respond(self, user_input):
+        if len(self.messages) > 30:  
+            self.messages = self.messages[:1] + self.messages[-28:] 
 
-        self.history.append({"role": "user", "content": user_speech})
-        response = self.client.chat.completions.create(
-            model = self.model,  
-            messages = self.history
-        )
-        
-        # print("Raw Response:", response)
+        if user_input is None:
+            return None
 
-        return response.choices[0].message.content
-    
-    def conversation(self):
-        # Opens a place where user can openly talk to jarvis
-        while True:
-            user_input = input("user: ")
-            self.history.append({"role": "user", "content": user_input})
+        self.messages.append({
+            "role": "system",
+            "content":  """
+                You must respond ONLY with a valid JSON dictionary with 3 keys: "text", "action", and "reasoning".
+                Do NOT leave any field incomplete. Your response MUST be complete and parsable as JSON.
+                """
+        })
+
+        self.messages.append({
+            "role": "system",
+            "content": f"Current time (users locale): {time.strftime('%Y-%m-%d %H:%M:%S')}"
+        })
+
+        self.messages.append({
+            "role": "user",
+            "content": user_input
+        })
+        
+        
+        try:
             response = self.client.chat.completions.create(
-            model = self.model,  
-            messages = self.history
+                model=self.model,
+                messages=self.messages,
+                response_format={"type": "json_object"}  # Force JSON output
             )
-            try:
-                deS_dict = json.loads(response.choices[0].message.content)
-            except:
-                print("something went wrong while trying to json the output:", response.choices[0].message.content)
             
-            print("Jarvis:", deS_dict['text'])
-            print("Jarvis action:", deS_dict['action'])
-            print("Jarvis reasoning:", deS_dict['reasoning'])
-            self.history.append({"role": "assitant", "content": deS_dict})
+            # Get the content and ensure it's valid JSON
+            response_content = response.choices[0].message.content
+
+            self.messages.append({
+                    "role": "assistant",
+                    "content": response_content # stringify it back for memory
+                })
+            
+            return json.loads(response_content)
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            print("trying again")
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=self.messages,
+                response_format={"type": "json_object"}  # Force JSON output
+            )
+
+            # Get the content and ensure it's valid JSON
+            response_content = response.choices[0].message.content
+
+            self.messages.append({
+                    "role": "assistant",
+                    "content": response_content # stringify it back for memory
+                })
+            
+            return json.loads(response_content)
 
 
 
-if __name__ == '__main__':
+        
+    def conversate(self):
+        print("Chat with Jarvis — type 'exit' to bail.\n")
+        while True:
+            user = input("You: ")
+            if user.lower() in ("exit", "quit"):
+                print("Jarvis: Later, skater!")
+                break
+
+            
+            start = time.perf_counter()
+            reply = self.respond(user)
+            elapsed = time.perf_counter() - start   
+
+            
+            print(f"\nJarvis: {reply['text']}")
+            print(f"Action: {reply['action']}")
+            print(f"Reasoning: {reply['reasoning']}")
+            print(f"(Response time: {elapsed:.3f}s)\n")
+
+
+
+# have a conversation with Jarvis
+if __name__ == "__main__": 
     jarvis = Jarvis()
-    try:
-        jarvis.conversation()
-    except Exception as e:
-        print(e)
-        jarvis.conversation()
+    jarvis.conversate()
