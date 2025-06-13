@@ -127,6 +127,12 @@ class Jarvis:
                 })
             
             return json.loads(response_content)
+        
+
+    def respond_and_act(self, user_input):
+        response = self.respond(user_input)
+        
+
 
 
 
@@ -149,8 +155,6 @@ class Jarvis:
             print(f"Action: {reply['action']}")
             print(f"Reasoning: {reply['reasoning']}")
             print(f"(Response time: {elapsed:.3f}s)\n")
-
-
 
 # have a conversation with Jarvis
 if __name__ == "__main__": 

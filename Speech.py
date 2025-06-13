@@ -116,8 +116,10 @@ class TexttoSpeech:
                 
                 if result >= 0:
                     print("\ninterupt detected!")
+                    self.interupt_time = time.time()
                     self.interrupted = True
                     self.continue_listen_for_interupt = False
+                    self.continue_calibrate_noise = False
                     self.on_interupt()
                     break 
             print("done listening for interupt")
@@ -125,11 +127,14 @@ class TexttoSpeech:
         except Exception as e:
             print(e)
 
+
     @log_function_name
     def on_interupt(self):
         with self.mic_lock:
             self.stop_audio_playback()
+            print("interupt time:", time.time()-self.interupt_time)
             self.record_until_silence()
+
 
     @log_function_name
     def stop_audio_playback(self):
@@ -143,7 +148,7 @@ class TexttoSpeech:
             with self.mic_lock:
                 with self.microphone as source:
                     print("📡 Calibrating for ambient noise...")
-                    self.recognizer.adjust_for_ambient_noise(source, duration=duration)
+                    self.recognizer.adjust_for_ambient_noise(source, duration=.1)
                     print(f"✅ Energy threshold set to: {self.recognizer.energy_threshold}")
 
     @log_function_name
@@ -240,7 +245,10 @@ class TexttoSpeech:
             print("made interupt thread and about to start it")
             interupt_thread.start()
 
-            print(f"time took: {time.time()-self.start}")
+            print(f"time took to speak: {time.time()-self.start}")
+
+            if hasattr(self,"response_time"):
+                print("total response time:", time.time()-self.response_time)
 
             self.audio_process = subprocess.Popen(["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filename])
             self.audio_process.wait()
@@ -271,7 +279,7 @@ class TexttoSpeech:
         buffer = []
         silence_count = 0
         speech_count = 0
-        max_silence_frames = 7  # 100ms of silence before stopping
+        max_silence_frames = 13  # 100ms of silence before stopping
         min_frames = 25
 
         for i, frame in enumerate(self.frame_generator()):
@@ -310,7 +318,8 @@ class TexttoSpeech:
         print("🎧 Listening...")
         raw_audio = self.collect_voiced_frames()
         print("🛑 Speech ended. Transcribing...")
-        self.start = time.time()
+        self.anyalize_speech_start = time.time()
+        self.response_time = time.time()
         transcription = self.transcribe_audio(raw_audio)
         print("you said:", transcription)
         if transcription is None:
@@ -322,7 +331,7 @@ class TexttoSpeech:
             return
         
         print(answer.get("text"))
-        print(f"time took: {time.time()-self.start}")
+        print(f"time took to analyze speech: {time.time()-self.anyalize_speech_start}")
         self.speak(answer.get("text"))
 
         if self.interrupted is False:
