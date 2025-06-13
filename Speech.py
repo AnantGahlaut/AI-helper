@@ -324,7 +324,7 @@ class TexttoSpeech:
         print("you said:", transcription)
         if transcription is None:
             return None
-        answer = self.jarvis.respond(transcription)
+        answer = self.jarvis.respond_and_act(transcription)
 
         if transcription is None:
             print("[JARVIS]: Didn't catch that, try again!")
@@ -361,7 +361,7 @@ class TexttoSpeech:
     def conversation(self, user_speech):
         convo_cont = True
         while convo_cont:
-            response = self.jarvis.respond(user_speech)
+            response = self.jarvis.respond_and_act(user_speech)
             self.speak(response.get("text"))
             print("time Started")
             self.start = time.time()
