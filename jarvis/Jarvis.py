@@ -8,13 +8,15 @@ import threading
 import webbrowser
 
 class Jarvis:
+    groq_access_key = "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"
+    openrouter_access_key = "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"
     def __init__(self):
-        self.model = "llama3-70b-8192" 
+        self.model = "meta-llama/llama-3.3-70b-instruct" 
         self.client = OpenAI(
-            api_key="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",  
-            base_url="https://api.groq.com/openai/v1"
+            api_key= self.openrouter_access_key,  
+            base_url="https://openrouter.ai/api/v1"
         )
-
+        
         self.actions_list = [
                     "open_application",               # use to open application
                     "open_text_file",                 # use to open a text file and write things inside

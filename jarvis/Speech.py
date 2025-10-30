@@ -47,7 +47,7 @@ class TexttoSpeech:
 
         self.porcupine = pvporcupine.create(
             access_key="YoJJ2GN4CRSCbFssd9B53Rdn8jwEp0DcWSapSf/qE/56coAbPf/faw==",
-            keyword_paths=["Ai_helper\wakeword.ppn" ] if "Ai_helper\wakeword.ppn" else None,
+            keyword_paths=["resources\wakeword.ppn" ] if "resources\wakeword.ppn" else None,
             keywords=["porcupine"] if not "Ai_helper\wakeword.ppn"  else None,
             sensitivities=[0.3]
         )
@@ -67,7 +67,6 @@ class TexttoSpeech:
 
         self.engine = pyttsx3.init()
         self.vad = webrtcvad.Vad(3) 
-        self.audio = pyaudio.PyAudio()
         self.ring_buffer = collections.deque(maxlen=10)
                    
         self.FRAME_DURATION = 20  # ms
@@ -94,7 +93,6 @@ class TexttoSpeech:
 
     @log_function_name
     def listen_for_interupt(self):
-        
         self.stream = self.audio.open(
             rate=self.porcupine.sample_rate,
             channels=1,
@@ -259,27 +257,35 @@ class TexttoSpeech:
            
 
     @log_function_name
-    def speak_opening_line(self, id = 1, filename = r"C:\Users\anant\OneDrive\Documents\Desktop\Jarvis\Ai_helper\output.mp3"):
+    def speak_opening_line(self, id = 1, filename = r"C:\Users\anant\OneDrive\Documents\Desktop\Jarvis\Ai_helper\resources\YesSir.mp3"):
+        #self.blob.show()
         if id == 1:
             subprocess.run(["ffplay", "-nodisp", "-autoexit", filename], check=True)
         said = self.record_until_silence()
         
     def frame_generator(self):
-        with sd.InputStream(channels=self.CHANNELS, samplerate=self.SAMPLE_RATE, dtype='int16', blocksize=self.FRAME_SIZE) as stream:
+        with sd.InputStream(
+            channels=1,  # VAD likes mono
+            samplerate=self.SAMPLE_RATE,
+            dtype='int16',
+            blocksize=self.FRAME_SIZE
+        ) as stream:
             while True:
-                audio = stream.read(self.FRAME_SIZE)[0]
+                audio, _ = stream.read(self.FRAME_SIZE)
+                assert audio.dtype == np.int16
+                frame_bytes = audio.tobytes()
                 volume = np.linalg.norm(audio) / self.FRAME_SIZE
-                print(f"Volume: {volume:.2f}, {self.is_speech(audio)}")  # should spike when you talk
-                yield audio.tobytes()
+                print(f"Volume: {volume:.2f}, {self.is_speech(frame_bytes)}")
+                yield frame_bytes  # always yield bytes
 
-    def is_speech(self, frame):
-        return self.vad.is_speech(frame, self.SAMPLE_RATE)
+    def is_speech(self, frame_bytes):
+        return self.vad.is_speech(frame_bytes, self.SAMPLE_RATE)
     
     def collect_voiced_frames(self, max_loops=60):
         buffer = []
         silence_count = 0
         speech_count = 0
-        max_silence_frames = 13  # 100ms of silence before stopping
+        max_silence_frames = 5  # 100ms of silence before stopping
         min_frames = 25
 
         for i, frame in enumerate(self.frame_generator()):
@@ -354,7 +360,6 @@ class TexttoSpeech:
                 except Exception as e:
                     print(e)
                     return False
-            
             return False
             
     @log_function_name

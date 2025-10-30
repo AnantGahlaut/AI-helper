@@ -1,9 +1,9 @@
 TODO for Jarvis:
 
 
-average response time is 1.5 - 4 sec
+average response time is 1.5 - 3 sec
 figuring out if its a problem: maybe change the voice a little slow
-Current problem: # add all action features
+Current problem: # FIX VOICE INTAKE ISSUE IS_SPEECH/ISNT
 
 # add history feature with text file it rings up at the beginning when setting everything up
 # add opencv personalized face recognition use threading for full computer utilization

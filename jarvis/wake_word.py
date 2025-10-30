@@ -2,7 +2,8 @@ import pyaudio
 import pvporcupine
 import struct
 import os
-import Speech
+import threading
+import Speech as Speech
 
 class WakeWordDetector:
     def __init__(self, access_key, keyword_path=None, sensitivity=0.3):
@@ -16,6 +17,7 @@ class WakeWordDetector:
 
         self.texttospeech = Speech.TexttoSpeech()
         
+
         # Initialize PyAudio
         self.audio = pyaudio.PyAudio()
         
@@ -32,6 +34,8 @@ class WakeWordDetector:
     def listen(self):
         """Listen for wake word and trigger callback when detected"""
         print("Listening for wake word...")
+        #blob_thread = threading.Thread(target=self.texttospeech.blob.start, daemon=True)
+        #blob_thread.start()
         self.texttospeech.speak("Jarvis Initialized")
         
         try:
@@ -69,7 +73,7 @@ class WakeWordDetector:
 if __name__ == '__main__':
     ACCESS_KEY = "YoJJ2GN4CRSCbFssd9B53Rdn8jwEp0DcWSapSf/qE/56coAbPf/faw=="
     
-    KEYWORD_PATH = "Ai_helper\wakeword.ppn"  
+    KEYWORD_PATH = "resources\wakeword.ppn"  
     
     detector = WakeWordDetector(access_key=ACCESS_KEY, keyword_path=KEYWORD_PATH)
     detector.listen()
