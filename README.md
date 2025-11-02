@@ -45,14 +45,21 @@ Utilities & Helpers
 - 📝 dotenv — Manage API keys and environment variables
 - 📊 numpy — Data handling and computations
 
-### Setup / API keys
+### Setup 
+1. Git clone this repo
+```
+git clone
+```
+
+
+### API keys
 
 1. Create an **OpenRouter** account and generate an API key. Save it as `OPENROUTER_API_KEY`.
 2. Create **ElevenLabs** credentials:
    - Create two ElevenLabs accounts and generate one API key in each. (This is because each account only gives you 15k tokens per month; 2 accounts will make sure you never run out of tokens, with failover capabilities.)
    - Save them as `ELEVENLABS_KEY_1` and `ELEVENLABS_KEY_2` (and `ELEVENLABS_VOICE_1`, `ELEVENLABS_VOICE_2` for voice IDs).
 3. Get a **Porcupine / Picovoice** AccessKey:
-   - Register at Picovoice, create/access a key and download any `.ppn` wake-word file(s) you want to use.
+   - Register at Picovoice, create/access a key, and download any `.ppn` wake-word file(s) you want to use.
    - Save the key as `PORCUPINE_ACCESS_KEY` and put keyword files in e.g. `./porcupine/`.
 4. Create a `.env` file in the project root with these entries:
 
@@ -70,11 +77,12 @@ VOICE_ID_2 = "xxxxxxxxxxxxxxxxxxxx"
 # Absolute Paths (These are for the app opening)
 CHROME_PATH   = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 VSCODE_PATH   = "C:\Users\YOURUSERNAME\AppData\Local\Programs\Microsoft VS Code\Code.exe"
-SPOTIFY_PATH  = "explorer shell:appsFolder\SpotifyAB.xxxxxxxxxxxxxxxxxxx!Spotify" # I put a command here as spotify is wierd and wont let you open with an absolute paht
-OUTLOOK_PATH  = "C:\Program Files\WindowsApps\Microsoft.OutlookForWindows_1.2025.604.100_x64__xxxxxxxxxxx\olk.exe"
-WHATSAPP_PATH = "C:\Program Files\WindowsApps\xxxxxxxx.WhatsAppDesktop_2.2522.2.xxxxxxxxxxxxxxxxxxxx\WhatsApp.exe"
-# you can add more as you like but dont forget to include the new info in the Backend.py file
-
+SPOTIFY_PATH  = "explorer shell:appsFolder\SpotifyAB.xxxxxxxxxxxxxxxxxxx!Spotify"
+OUTLOOK_PATH  = "C:\Program Files\WindowsApps\Microsoft.OutlookForWindows_1.xx_x64__xxxxx\olk.exe"
+WHATSAPP_PATH = "C:\Program Files\WindowsApps\xxxxxx.WhatsAppDesktop_2.2522.2.xxxxxxxxx\WhatsApp.exe"
+# You can add more as you like, but don't forget to include the new info in the Backend.py file
 ```
+
+
 
 
