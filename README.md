@@ -73,34 +73,37 @@ WHATSAPP_PATH = "C:\Program Files\WindowsApps\xxxxxx.WhatsAppDesktop_2.2522.2.xx
 
 ### How To Use it
 
-**1️⃣Run the Main Script**
+**1️⃣ Run the Main Script**
 ```bash
 python src/main
 ```
-**2️⃣Wait for initialization**
+**2️⃣ Wait for initialization**
 
    Jarvis will say:
    
    "Jarvis Initialized"
    
-**3️⃣Say the Wake Word**
+**3️⃣ Say the Wake Word**
 
    Say "Jarvis" and it will respond, "Yes, Sir?"
    
-**4️⃣Give a command**
+**4️⃣ Give a command**
    Speak naturally. Jarvis will(in a matter of seconds):
    - 🎧 Record your speech
    - 📝 Transcribe it
    - 🧠 Send it to the AI backend
    - 🗣️ Respond using TTS (text-to-speech)
      
-**5️⃣Interupt (optional)**
+**5️⃣ Interupt (optional)**
+
    While Jarvis is speaking, say "Jarvis" again.
    
    It will immediately stop talking and start listening for the next command.
    
-**6️⃣Conversating Loop**
+**6️⃣ Conversating Loop**
+
    When Jarvis finishes speaking, it will record for about 6 seconds, if it detects speech, it transcribes it and starts the process again.
+   
    If no input is detected, it returns to a dormant mode until you say the wake word again.
 
    
