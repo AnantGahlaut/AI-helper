@@ -2,12 +2,38 @@ import pyaudio
 import pvporcupine
 import struct
 import os
-import threading
+from dotenv import load_dotenv
 import Speech as Speech
 
 class WakeWordDetector:
+    """
+    WakeWordDetector Class
+
+    This class handles continuous wake word detection using Picovoice's Porcupine engine 
+    and acts as the entry point for activating the speech assistant. Once the wake word 
+    is detected, it triggers the Speech module to begin interaction with the user.
+
+    Key Features:
+    - **Wake Word Detection:** Continuously listens for a pre-defined wake word 
+    (default: "porcupine") or a custom keyword file.
+    - **Audio Handling:** Uses PyAudio to capture microphone input in real-time with 
+    proper buffering for Porcupine processing.
+    - **Speech Activation:** Upon detection, triggers the Speech class to play an opening 
+    line and start listening for user commands.
+    - **Thread-Safe Integration:** Can be combined with other threaded speech operations 
+    without blocking.
+    - **Resource Management:** Cleanly releases audio and Porcupine resources on exit.
+
+    Usage:
+        detector = WakeWordDetector(access_key=ACCESS_KEY, keyword_path=KEYWORD_PATH)
+        detector.listen()
+
+    This class is intended to be the always-on "ear" for your AI assistant, 
+    activating interaction only when the user says the wake word.
+    """
+
     def __init__(self, access_key, keyword_path=None, sensitivity=0.3):
-        # Initialize Porcupine
+        """Initialize WakeWordDetector with Porcupine and PyAudio"""
         self.porcupine = pvporcupine.create(
             access_key=access_key,
             keyword_paths=[keyword_path] if keyword_path else None,
@@ -15,7 +41,7 @@ class WakeWordDetector:
             sensitivities=[sensitivity]
         )
 
-        self.texttospeech = Speech.TexttoSpeech()
+        self.speech = Speech.Speech()
         
 
         # Initialize PyAudio
@@ -34,9 +60,9 @@ class WakeWordDetector:
     def listen(self):
         """Listen for wake word and trigger callback when detected"""
         print("Listening for wake word...")
-        #blob_thread = threading.Thread(target=self.texttospeech.blob.start, daemon=True)
+        #blob_thread = threading.Thread(target=self.speech.blob.start, daemon=True)
         #blob_thread.start()
-        self.texttospeech.speak("Jarvis Initialized")
+        self.speech.speak("Jarvis Initialized")
         
         try:
             while True:
@@ -48,7 +74,7 @@ class WakeWordDetector:
                 result = self.porcupine.process(pcm)
                 
                 if result >= 0:
-                    if self.texttospeech.interupt_listening is not True:
+                    if self.speech.interupt_listening is not True:
                         print("\nWake word detected!")
                         self.on_wake_word_detected()
                     
@@ -58,7 +84,8 @@ class WakeWordDetector:
             self.cleanup()
             
     def on_wake_word_detected(self):
-        self.texttospeech.speak_opening_line()
+        """Callback when wake word is detected"""
+        self.speech.speak_opening_line()
     
     def cleanup(self):
         """Release resources"""
@@ -71,9 +98,15 @@ class WakeWordDetector:
 
 
 if __name__ == '__main__':
-    ACCESS_KEY = "YoJJ2GN4CRSCbFssd9B53Rdn8jwEp0DcWSapSf/qE/56coAbPf/faw=="
+    class WakeWord(WakeWordDetector):
+        def on_wake_word_detected(self):
+            pass
+    
+    load_dotenv()
+
+    ACCESS_KEY = os.getenv("PORCUPINE_API_KEY")
     
     KEYWORD_PATH = "resources\wakeword.ppn"  
     
-    detector = WakeWordDetector(access_key=ACCESS_KEY, keyword_path=KEYWORD_PATH)
+    detector = WakeWord(access_key=ACCESS_KEY, keyword_path=KEYWORD_PATH)
     detector.listen()

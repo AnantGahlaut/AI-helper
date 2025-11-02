@@ -30,6 +30,7 @@ def frame_generator():
             print(f"Volume: {volume:.2f}, Speech? {is_speech(frame_bytes)}")
             yield frame_bytes
 
-# test loop
-for frame in frame_generator():
-    pass
+if __name__ == "__main__":
+    print("Starting VAD test. Speak into the microphone to see if speech is detected.")
+    for frame in frame_generator():
+        pass

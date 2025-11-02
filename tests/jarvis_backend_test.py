@@ -1,11 +1,12 @@
 import sys
 sys.path.append("..")
-from jarvis.Jarvis import Jarvis
+from src.Backend import Backend
 import time
 
 def test_jarvis_initialization():
+    """Test initialization of the Jarvis Backend class."""
     start_time = time.time()
-    jarvis_instance = Jarvis()
+    jarvis_instance = Backend()
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Initialization time: {elapsed_time:.2f} seconds")
@@ -15,7 +16,8 @@ def test_jarvis_initialization():
     assert hasattr(jarvis_instance, "respond")
 
 def test_jarvis_backend():
-    jarvis_instance = Jarvis()
+    """Test the respond method of the Jarvis Backend class."""
+    jarvis_instance = Backend()
     start_time = time.time()
     response = jarvis_instance.respond("What is the capital of France?")
     end_time = time.time()
