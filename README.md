@@ -16,40 +16,30 @@ Features
 - 🧰 Customizable Skills — Add your own commands and extend functionality easily.
 
 
-
-Languages & Frameworks
-
-- 🐍 Python — Core logic, threading, and automation control
-
 Voice Input & Recognition
 
--🎙️ SpeechRecognition — Converts spoken words to text
-- 🔊 PyAudio & SoundDevice / SoundFile — Real-time audio input/output
-- 🧠 webrtcvad — Voice activity detection for cleaner recognition
-- 🐖 pvporcupine — Wake word detection (“Hey Jarvis”)
+- 🎙️ SpeechRecognition | PyAudio | SoundDevice | SoundFile | webrtcvad | pvporcupine
 
 Text-to-Speech & Output
 
-- 🗣️ pyttsx3 — Offline TTS engine
-- 🎤 ElevenLabs API — High-quality voice synthesis
-- 🎵 pydub — Audio processing and playback utilities
+- 🗣️ pyttsx3 | 🎤 ElevenLabs API | pydub 
 
-Backend & System Integration
+Backend & Utilities
 
-- 💻 PowerShell / subprocess — Execute system-level commands
-- 🌐 webbrowser — Open URLs and web-based actions
-- ⚙️ Backend module — Custom logic for task handling
-
-Utilities & Helpers
-
-- 📝 dotenv — Manage API keys and environment variables
-- 📊 numpy — Data handling and computations
+- 💻 PowerShell | webbrowser | dotenv | numpy
 
 ### Setup 
-1. Git clone this repo
+
+1. Clone this repo.
 ```
-git clone
+git clone https://github.com/AnantGahlaut/AI-helper.git
 ```
+2. Install requirements.
+```
+pip install -r requirements.txt
+```
+
+3. Make the env files with API keys and Paths
 
 
 ### API keys
@@ -82,6 +72,17 @@ OUTLOOK_PATH  = "C:\Program Files\WindowsApps\Microsoft.OutlookForWindows_1.xx_x
 WHATSAPP_PATH = "C:\Program Files\WindowsApps\xxxxxx.WhatsAppDesktop_2.2522.2.xxxxxxxxx\WhatsApp.exe"
 # You can add more as you like, but don't forget to include the new info in the Backend.py file
 ```
+
+
+### How To Use
+
+1. Run `main.py` in `src`
+2. Wait for the System to initialize. Once it does that, it will say Jarvis Initialized.
+3. Now you can say Jarvis, and if the system understands you, it will say Yes, Sir.
+4. Right after Jarvis finishes, it starts recording for speech. If you don't say anything, or it doesn't recognize speech, it will go into dormant mode, waiting for you to say the wake word again
+5. Once you finish speaking, it will transcribe your speech, feed it into the AI backend, get a response, and use the TTS system to respond.
+6. If you want to interrupt Jarvis in the middle of its speaking, you can js repeat "Jarvis", the wake word, and it will stop the audio.
+7. Once it is done speaking, it will go through the same cycle of listening for a response from you; if it doesn't get one, it will go back to dormant mode.
 
 
 
