@@ -88,7 +88,7 @@ class Speech:
             self.speak_style = 1
 
         self.porcupine = pvporcupine.create(
-            access_key="YoJJ2GN4CRSCbFssd9B53Rdn8jwEp0DcWSapSf/qE/56coAbPf/faw==",
+            access_key=os.getenv("PORCUPINE_API_KEY"),
             keyword_paths=["resources\wakeword.ppn" ] if "resources\wakeword.ppn" else None,
             keywords=["porcupine"] if not "Ai_helper\wakeword.ppn"  else None,
             sensitivities=[0.3]

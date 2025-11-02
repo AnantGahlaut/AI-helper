@@ -1,0 +1,25 @@
+2025-11-02 16:29:50 - Imported existing <module 'comtypes.gen' from 'C:\\Users\\anant\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\comtypes\\gen\\__init__.py'>
+2025-11-02 16:29:50 - Using writeable comtypes cache directory: 'C:\Users\anant\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\comtypes\gen'
+2025-11-02 16:29:50 - Calling function: calibrate_noise
+2025-11-02 16:29:50 -  Energy threshold set to: 251.6605354568868
+2025-11-02 16:29:51 - Calling function: speak
+2025-11-02 16:29:51 - HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/ErXwobaYiN019PkySvjV?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+2025-11-02 16:29:53 - Calling function: calibrate_noise
+2025-11-02 16:29:53 - Calling function: listen_for_interupt
+2025-11-02 16:29:53 - time took to turn text into speach: 2.5958969593048096
+2025-11-02 16:29:53 - listen for interupt
+2025-11-02 16:29:53 -  Energy threshold set to: 211.24629756976327
+2025-11-02 16:29:55 - Calling function: on_interupt
+2025-11-02 16:29:55 - Calling function: stop_audio_playback
+2025-11-02 16:37:22 - Imported existing <module 'comtypes.gen' from 'C:\\Users\\anant\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\comtypes\\gen\\__init__.py'>
+2025-11-02 16:37:22 - Using writeable comtypes cache directory: 'C:\Users\anant\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\comtypes\gen'
+2025-11-02 16:37:22 - Calling function: calibrate_noise
+2025-11-02 16:37:22 -  Energy threshold set to: 251.6605354568868
+2025-11-02 16:37:23 - Calling function: speak
+2025-11-02 16:37:23 - HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/ErXwobaYiN019PkySvjV?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+2025-11-02 16:37:25 - Calling function: calibrate_noise
+2025-11-02 16:37:25 - Calling function: listen_for_interupt
+2025-11-02 16:37:25 - time took to turn text into speach: 2.5955889225006104
+2025-11-02 16:37:25 - listen for interupt
+2025-11-02 16:37:25 -  Energy threshold set to: 211.56115194071967
+2025-11-02 16:37:28 - done listening for interupt
