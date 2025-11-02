@@ -1,0 +1,12 @@
+openai
+python-dotenv
+SpeechRecognition
+pyaudio
+sounddevice
+soundfile
+webrtcvad
+numpy
+pydub
+pvporcupine
+elevenlabs
+pyttsx3

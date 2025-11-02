@@ -1,21 +1,17 @@
 import os
-import io
 import logging
 import webrtcvad
 import pyaudio
 import sounddevice as sd
 import soundfile as sf
-import autopep8
 import subprocess
 import collections
 import threading
 import struct
 import time
 import pyttsx3
-import elevenlabs
 import numpy as np
 from pydub.utils import mediainfo
-from pydub import AudioSegment
 import pvporcupine
 import speech_recognition as sr
 from dotenv import load_dotenv
