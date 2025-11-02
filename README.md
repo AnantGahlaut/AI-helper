@@ -1,4 +1,4 @@
-# 🧠 Jarvis — Lightweight AI Voice Assistant
+# Jarvis — Lightweight AI Voice Assistant
 
 > Your personal voice-powered desktop assistant built with Python.
 
