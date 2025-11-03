@@ -75,7 +75,7 @@ WHATSAPP_PATH = "C:\Program Files\WindowsApps\xxxxxx.WhatsAppDesktop_2.2522.2.xx
 
 **1️⃣ Run the Main Script**
 ```bash
-python src/main
+python src/main.py
 ```
 **2️⃣ Wait for initialization**
 
@@ -104,7 +104,7 @@ python src/main
 
    When Jarvis finishes speaking, it will record for about 6 seconds, if it detects speech, it transcribes it and starts the process again.
    
-   If no input is detected, it returns to a dormant mode until you say the wake word again.
+   If no input is detected, it returns to a dormant mode until you say the wake word ("Jarvis") again.
 
    
 
