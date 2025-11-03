@@ -30,7 +30,7 @@ running PowerShell commands, or automating workflows — all while staying effic
 `pyttsx3` • `ElevenLabs API` • `pydub`
 
 ### 💻 Backend & Utilities  
-`PowerShell` • `webbrowser` • `dotenv` • `numpy`
+`PowerShell` • `webbrowser` • `dotenv` • `numpy`•`openAI`
 
 ---
 
